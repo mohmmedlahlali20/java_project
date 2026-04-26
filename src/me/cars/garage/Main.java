@@ -5,6 +5,7 @@ import me.cars.garage.services.GarageService;
 import me.cars.garage.utils.FileManager;
 import me.cars.garage.utils.InvalideCarDataException;
 
+import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 
@@ -41,12 +42,24 @@ public class Main {
                     String plate = scanner.nextLine();
                     System.out.println("Enter Brand: ");
                     String brand = scanner.nextLine();
-                    System.out.println("Enter Price: ");
-                    int price = scanner.nextInt();
-                    if (price < 0) throw new InvalideCarDataException("Price cannot be negative!");
-                    if (plate.trim().isEmpty() || brand.trim().isEmpty()){
-                        System.out.println("Plate and brand cannot be empty");
+                    int price = 0;
+                    boolean validPrice = false;
+
+                    while (!validPrice){
+                        System.out.println("Enter price only numbers: ");
+                        try{
+                            price = scanner.nextInt();
+                            if (price > 0){
+                                validPrice = true;
+                            } else{
+                                System.out.println("Price must be positive");
+                            }
+                        } catch (InputMismatchException e){
+                            System.out.println("error: please enter valid number");
+                            scanner.nextLine();
+                        }
                     }
+
                     scanner.nextLine();
 
                     Car newCar = new Car(plate, brand, price);
