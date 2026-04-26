@@ -2,24 +2,32 @@ package me.cars.garage;
 
 import me.cars.garage.models.Car;
 import me.cars.garage.services.GarageService;
-import me.cars.garage.utils.FileManager;
+import me.cars.garage.utils.DatabaseConnection;
 import me.cars.garage.utils.InvalideCarDataException;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.InputMismatchException;
-import java.util.List;
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws InvalideCarDataException {
-        System.out.println("--- Welcome to Garage Management System ---");
+
+        try {
+            Connection conn = DatabaseConnection.getConnection();
+            if (conn != null) {
+                System.out.println("Database connection established successfully!");
+            }
+        } catch (SQLException e) {
+            System.err.println("Database Error: " + e.getMessage());
+            System.out.println("Check your .env file and PostgreSQL service.");
+            return;
+        }
+
+        System.out.println("--- Welcome to Garage Management System (SQL Edition) ---");
         Scanner scanner = new Scanner(System.in);
         GarageService garageService = new GarageService();
-        FileManager fileManager = new FileManager();
-        List<Car> loadCars = fileManager.loadFromFile();
-        for (Car c: loadCars){
-            garageService.addCar(c);
-        }
-        System.out.println("Systeme: laoded " + loadCars.size() + " cars");
+
 
 
         while (true) {
@@ -32,69 +40,74 @@ public class Main {
             System.out.println("6. Exit");
             System.out.print("Choice: ");
 
-            int choice = scanner.nextInt();
-            scanner.nextLine();
-
+            int choice = 0;
+            try {
+                choice = scanner.nextInt();
+                scanner.nextLine();
+            } catch (InputMismatchException e) {
+                System.out.println("❌ Please enter a valid menu number.");
+                scanner.nextLine();
+                continue;
+            }
 
             switch (choice) {
                 case 1:
-                    System.out.println("Enter Plate: ");
+                    System.out.print("Enter Plate: ");
                     String plate = scanner.nextLine();
-                    System.out.println("Enter Brand: ");
+                    System.out.print("Enter Brand: ");
                     String brand = scanner.nextLine();
+
                     int price = 0;
                     boolean validPrice = false;
-
-                    while (!validPrice){
-                        System.out.println("Enter price only numbers: ");
-                        try{
+                    while (!validPrice) {
+                        System.out.print("Enter price (positive number): ");
+                        try {
                             price = scanner.nextInt();
-                            if (price > 0){
-                                validPrice = true;
-                            } else{
-                                System.out.println("Price must be positive");
-                            }
-                        } catch (InputMismatchException e){
-                            System.out.println("error: please enter valid number");
+                            if (price > 0) validPrice = true;
+                            else System.out.println("Price must be positive!");
+                        } catch (InputMismatchException e) {
+                            System.out.println("Error: enter valid number");
                             scanner.nextLine();
                         }
                     }
-
                     scanner.nextLine();
 
                     Car newCar = new Car(plate, brand, price);
                     garageService.addCar(newCar);
                     break;
+
                 case 2:
                     garageService.showAllCars();
                     break;
+
                 case 3:
-                    System.out.println("Enter Plate to search");
+                    System.out.print("Enter Plate to search: ");
                     String searchPlate = scanner.nextLine();
                     garageService.findCarByPlate(searchPlate);
                     break;
+
                 case 4:
-                    System.out.println("Enter Plate: ");
+                    System.out.print("Enter Plate: ");
                     String uPlate = scanner.nextLine();
-                    System.out.println("Enter New Price");
+                    System.out.print("Enter New Price: ");
                     int newPrice = scanner.nextInt();
+                    scanner.nextLine();
                     garageService.updateCar(uPlate, newPrice);
                     break;
+
                 case 5:
-                    System.out.println("Enter Plate to Delete");
+                    System.out.print("Enter Plate to Delete: ");
                     String dPlate = scanner.nextLine();
                     garageService.removeCar(dPlate);
                     break;
+
                 case 6:
-                    System.out.println("Saving data...");
-                    fileManager.saveToFile(garageService.getAllCarsList());
-                    System.out.println("bye bye");
+                    System.out.println("All data is safe in PostgreSQL. Bye bye!");
                     return;
 
+                default:
+                    System.out.println("Invalid choice. Try again.");
             }
-
-
         }
-
     }
 }
